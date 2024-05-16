@@ -17,23 +17,24 @@ model User {
   id    Int     @id @default(autoincrement())
   address String  @unique
   tasks Task[]
+  payouts Payouts[]
 }
 
 model Task {
   id Int @id @default(autoincrement())
-  title String @default("Select the thumbnail you like the most")
+  title String? @default("Select the thumbnail you like the most.")
   options Option[]
   user_id Int
   user User @relation(fields: [user_id], references: [id])
   submissions Submission[]
   signature String
-  amount String
+  amount Int
+  done Boolean @default(false)
 }
 
 model Option {
   id Int @id @default(autoincrement())
   image_url String
-  option_id Int 
   task_id Int 
   task Task @relation(fields:[task_id], references: [id])
   submissions Submission[]
@@ -43,7 +44,6 @@ model Worker {
   id    Int     @id @default(autoincrement())
   address String  @unique
   submissions Submission[]
-  balance_id Int
   pending_amount Int
   locked_amount Int
 }
@@ -56,5 +56,21 @@ model Submission {
   option Option @relation(fields: [option_id], references: [id])
   task_id Int
   task Task @relation(fields: [task_id], references: [id])
-  amount String
+  amount Int
+  @@unique([worker_id, task_id])
+}
+
+model Payouts {
+  id Int @id @default(autoincrement())
+  user_id Int 
+  user User @relation(fields: [user_id], references: [id])
+  amount Int
+  signature String
+  status TxnStatus
+}
+
+enum TxnStatus {
+  Processing
+  Success
+  Failure
 }
