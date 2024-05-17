@@ -22,6 +22,49 @@ const types_1 = require("../types");
 const TOTAL_SUBMISSIONS = 100;
 const router = (0, express_1.Router)();
 const prismaClient = new client_1.PrismaClient();
+router.post("/payout", middleware_1.workerMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    // @ts-ignore
+    const userId = req.userId;
+    const worker = yield prismaClient.worker.findFirst({
+        where: {
+            id: Number(userId)
+        }
+    });
+    if (!worker) {
+        return res.status(403).json({
+            message: "User not found."
+        });
+    }
+    const address = worker.address;
+    const txnId = "0x12345";
+    yield prismaClient.$transaction((txn) => __awaiter(void 0, void 0, void 0, function* () {
+        yield txn.worker.update({
+            where: {
+                id: Number(userId)
+            },
+            data: {
+                pending_amount: {
+                    decrement: worker.pending_amount
+                },
+                locked_amount: {
+                    increment: worker.pending_amount
+                }
+            }
+        });
+        yield txn.payouts.create({
+            data: {
+                user_id: Number(userId),
+                amount: worker.pending_amount,
+                status: "Processing",
+                signature: txnId
+            }
+        });
+    }));
+    res.json({
+        message: "Processing Payout.",
+        amount: worker.pending_amount
+    });
+}));
 router.get("/balance", middleware_1.workerMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     // @ts-ignore
     const userId = req.userId;
@@ -54,7 +97,7 @@ router.post("/submission", middleware_1.workerMiddleware, (req, res) => __awaite
                     option_id: Number(parsedBody.data.selection),
                     worker_id: userId,
                     task_id: Number(parsedBody.data.taskId),
-                    amount
+                    amount: Number(amount)
                 }
             });
             yield txn.worker.update({

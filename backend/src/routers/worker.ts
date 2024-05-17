@@ -31,6 +31,37 @@ router.post("/payout", workerMiddleware, async (req, res) => {
 
     const txnId = "0x12345";
 
+    await prismaClient.$transaction(async txn => {
+        await txn.worker.update({
+            where: {
+                id: Number(userId)
+            },
+            data: {
+                pending_amount: {
+                    decrement: worker.pending_amount
+                },
+                locked_amount: {
+                    increment: worker.pending_amount
+                }
+            }
+        })
+
+        await txn.payouts.create({
+            data: {
+                user_id: Number(userId),
+                amount: worker.pending_amount,
+                status: "Processing",
+                signature: txnId
+            }
+        })
+
+    })
+
+    res.json({
+        message: "Processing Payout.",
+        amount: worker.pending_amount
+    })
+
 })
 
 router.get("/balance", workerMiddleware, async(req, res) => {
@@ -70,7 +101,7 @@ router.post("/submission", workerMiddleware, async (req, res) => {
                     option_id: Number(parsedBody.data.selection),
                     worker_id: userId,
                     task_id: Number(parsedBody.data.taskId),
-                    amount
+                    amount: Number(amount)
                 }
             })
 
