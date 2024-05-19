@@ -1,18 +1,18 @@
 "use client";
-// import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
+import { PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import { UploadImage } from "@/components/UploadImage";
-// import { BACKEND_URL } from "@/utils";
+import { BACKEND_URL } from "@/utils";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-// import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 
 export const Upload = () => {
     const [images, setImages] = useState<string[]>([]);
     const [title, setTitle] = useState("");
     const [txSignature, setTxSignature] = useState("");
-    // const { publicKey, sendTransaction } = useWallet();
-    // const { connection } = useConnection();
+    const { publicKey, sendTransaction } = useWallet();
+    const { connection } = useConnection();
     const router = useRouter();
 
     async function onSubmit() {

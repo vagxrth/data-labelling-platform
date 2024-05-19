@@ -12,6 +12,16 @@ const router = Router();
 
 const prismaClient = new PrismaClient();
 
+prismaClient.$transaction(
+    async (prisma) => {
+        // code running in transaction
+    },
+    {
+        maxWait: 5000,
+        timeOut: 10000
+    }
+)
+
 router.post("/payout", workerMiddleware, async (req, res) => {
     // @ts-ignore
     const userId: string = req.userId;
@@ -124,6 +134,10 @@ router.post("/submission", workerMiddleware, async (req, res) => {
             nextTask,
             amount
         })
+    } else {
+        res.status(411).json({
+            message: "Incorrect inputs."
+        })
     }
 })
 
@@ -138,7 +152,7 @@ router.get("/nextTask", workerMiddleware, async (req, res) => {
             message: "No more tasks left to review."
         })
     } else {
-        res.status(411).json({
+        res.json({
             task
         })
     }

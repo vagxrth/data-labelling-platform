@@ -22,6 +22,16 @@ const router = Router();
 
 const prismaClient = new PrismaClient();
 
+prismaClient.$transaction(
+    async (prisma) => {
+        // code running in transaction
+    },
+    {
+        maxWait: 5000,
+        timeOut: 10000
+    }
+)
+
 router.get("/task", authMiddleware, async (req, res) => {
     // @ts-ignore
     const taskId: string = req.query.taskId;
