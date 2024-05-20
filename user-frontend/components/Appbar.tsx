@@ -9,7 +9,7 @@ import axios from 'axios';
 import { BACKEND_URL } from '@/utils';
 
 export const Appbar = () => {
-    const { publicKey , signMessage} = useWallet();
+    const { publicKey, signMessage} = useWallet();
 
     async function signAndSend() {
         if (!publicKey) {
@@ -36,7 +36,7 @@ export const Appbar = () => {
             Turkify
         </div>
         <div className="text-xl pr-4 pb-2">
-            {publicKey  ? <WalletDisconnectButton /> : <WalletMultiButton />}
+            {publicKey ? <WalletDisconnectButton /> : <WalletMultiButton />}
         </div>
     </div>
 }

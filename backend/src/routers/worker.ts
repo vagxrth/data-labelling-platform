@@ -1,14 +1,18 @@
-import { Router } from "express";
+import nacl from "tweetnacl";
 import { PrismaClient } from "@prisma/client";
-import jwt from 'jsonwebtoken';
+import { Router } from "express";
+import jwt from "jsonwebtoken";
 import { workerMiddleware } from "../middleware";
 import { TOTAL_DECIMALS, WORKER_JWT_SECRET } from "../config";
 import { getNextTask } from "../db";
 import { createSubmissionInput } from "../types";
+import { Connection, Keypair, PublicKey, SystemProgram, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
+import { privateKey } from "../privateKey";
+import { decode } from "bs58";
+
+const connection = new Connection(process.env.RPC_URL ?? "");
 
 const TOTAL_SUBMISSIONS = 100;
-
-const router = Router();
 
 const prismaClient = new PrismaClient();
 
@@ -21,6 +25,8 @@ prismaClient.$transaction(
         timeOut: 10000
     }
 )
+
+const router = Router();
 
 router.post("/payout", workerMiddleware, async (req, res) => {
     // @ts-ignore
