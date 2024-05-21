@@ -8,7 +8,7 @@ const zod_1 = __importDefault(require("zod"));
 exports.createTaskInput = zod_1.default.object({
     options: zod_1.default.array(zod_1.default.object({
         imageURL: zod_1.default.string()
-    })),
+    })).min(2),
     title: zod_1.default.string().optional(),
     signature: zod_1.default.string()
 });

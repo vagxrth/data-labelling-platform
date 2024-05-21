@@ -7,7 +7,6 @@ import { TOTAL_DECIMALS, WORKER_JWT_SECRET } from "../config";
 import { getNextTask } from "../db";
 import { createSubmissionInput } from "../types";
 import { Connection, Keypair, PublicKey, SystemProgram, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
-import { privateKey } from "../privateKey";
 import { decode } from "bs58";
 
 const connection = new Connection(process.env.RPC_URL ?? "");
@@ -18,11 +17,11 @@ const prismaClient = new PrismaClient();
 
 prismaClient.$transaction(
     async (prisma) => {
-        // code running in transaction
+      // Code running in a transaction...
     },
     {
-        maxWait: 5000,
-        timeOut: 10000
+      maxWait: 5000, // default: 2000
+      timeout: 10000, // default: 5000
     }
 )
 
@@ -43,9 +42,29 @@ router.post("/payout", workerMiddleware, async (req, res) => {
         })
     }
 
-    const address = worker.address;
+    const transaction = new Transaction().add(
+        SystemProgram.transfer({
+            fromPubkey: new PublicKey("3zNrgQUXUW1ytsLExYTdSomdJTSRwNKFe8f24hzGvLa5"),
+            toPubkey: new PublicKey(worker.address),
+            lamports: 1000_000_000 * worker.pending_amount / TOTAL_DECIMALS,
+        })
+    );
 
-    const txnId = "0x12345";
+    const keypair = Keypair.fromSecretKey(decode(process.env.PRIVATE_KEY ?? ""));
+
+    let signature = "";
+    try {
+        signature = await sendAndConfirmTransaction(
+            connection,
+            transaction,
+            [keypair],
+        );
+    
+     } catch(e) {
+        return res.json({
+            message: "Transaction failed"
+        })
+     }
 
     await prismaClient.$transaction(async txn => {
         await txn.worker.update({
@@ -67,7 +86,7 @@ router.post("/payout", workerMiddleware, async (req, res) => {
                 user_id: Number(userId),
                 amount: worker.pending_amount,
                 status: "Processing",
-                signature: txnId
+                signature: signature
             }
         })
 
@@ -83,6 +102,7 @@ router.post("/payout", workerMiddleware, async (req, res) => {
 router.get("/balance", workerMiddleware, async(req, res) => {
     // @ts-ignore
     const userId: string = req.userId;
+
     const worker = await prismaClient.worker.findFirst({
         where:{
             id: Number(userId)
@@ -109,7 +129,7 @@ router.post("/submission", workerMiddleware, async (req, res) => {
             })
         }
 
-        const amount = (Number(task.amount) / TOTAL_SUBMISSIONS);
+        const amount = (Number(task.amount) / TOTAL_SUBMISSIONS).toString();
 
         const submission = await prismaClient.$transaction(async txn => {
             const submission = await txn.submission.create({
@@ -149,7 +169,7 @@ router.post("/submission", workerMiddleware, async (req, res) => {
 
 router.get("/nextTask", workerMiddleware, async (req, res) => {
     // @ts-ignore
-    const userId = req.userId;
+    const userId: string = req.userId;
 
     const task = await getNextTask(Number(userId));
 
@@ -165,11 +185,24 @@ router.get("/nextTask", workerMiddleware, async (req, res) => {
 })
 
 router.post("/signin", async (req, res) => {
-    const hardcodedWalletAddress = '3zNrgQUXUW1ytsLExYTdSomdJTSRwNKFe8f24hzGvLa5';
+    const { publicKey, signature } = req.body;
+    const message = new TextEncoder().encode("Sign into mechanical turks as a worker");
+
+    const result = nacl.sign.detached.verify(
+        message,
+        new Uint8Array(signature.data),
+        new PublicKey(publicKey).toBytes(),
+    );
+
+    if (!result) {
+        return res.status(411).json({
+            message: "Incorrect signature"
+        })
+    }
 
     const existingUser = await prismaClient.worker.findFirst({
         where: {
-            address: hardcodedWalletAddress
+            address: publicKey
         }
     })
 
@@ -185,7 +218,7 @@ router.post("/signin", async (req, res) => {
     } else {
         const user = await prismaClient.worker.create({
             data: {
-                address: hardcodedWalletAddress,
+                address: publicKey,
                 pending_amount: 0,
                 locked_amount: 0
             }
@@ -195,7 +228,8 @@ router.post("/signin", async (req, res) => {
         }, WORKER_JWT_SECRET)
 
         res.json({
-            token
+            token,
+            amount: 0
         })
     }
 });
