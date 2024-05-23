@@ -17,8 +17,8 @@ const DEFAULT_TITLE = "Select the thumbnail you like the most."
 
 const s3Client = new S3Client({
     credentials: {
-        accessKeyId: "AKIA2IJS5YSC2YEGHDFN",
-        secretAccessKey: "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",
+        accessKeyId: process.env.ACCESS_KEY ?? "",
+        secretAccessKey: process.env.SECRET_KEY ?? "",
     },
     region: "ap-south-1",
 })

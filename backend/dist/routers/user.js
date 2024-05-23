@@ -11,7 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a;
+var _a, _b, _c;
 Object.defineProperty(exports, "__esModule", { value: true });
 const tweetnacl_1 = __importDefault(require("tweetnacl"));
 const client_1 = require("@prisma/client");
@@ -28,8 +28,8 @@ const PARENT_WALLET_ADDRESS = "3zNrgQUXUW1ytsLExYTdSomdJTSRwNKFe8f24hzGvLa5";
 const DEFAULT_TITLE = "Select the thumbnail you like the most.";
 const s3Client = new client_s3_1.S3Client({
     credentials: {
-        accessKeyId: "AKIA2IJS5YSC2YEGHDFN",
-        secretAccessKey: "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",
+        accessKeyId: (_b = process.env.ACCESS_KEY) !== null && _b !== void 0 ? _b : "",
+        secretAccessKey: (_c = process.env.SECRET_KEY) !== null && _c !== void 0 ? _c : "",
     },
     region: "ap-south-1",
 });
@@ -86,7 +86,7 @@ router.get("/task", middleware_1.authMiddleware, (req, res) => __awaiter(void 0,
     });
 }));
 router.post("/task", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _b, _c, _d, _e, _f, _g;
+    var _d, _e, _f, _g, _h, _j;
     // @ts-ignore
     const userId = req.userId;
     const body = req.body;
@@ -105,26 +105,26 @@ router.post("/task", middleware_1.authMiddleware, (req, res) => __awaiter(void 0
         maxSupportedTransactionVersion: 1
     });
     console.log(transaction);
-    if (((_c = (_b = transaction === null || transaction === void 0 ? void 0 : transaction.meta) === null || _b === void 0 ? void 0 : _b.postBalances[1]) !== null && _c !== void 0 ? _c : 0) - ((_e = (_d = transaction === null || transaction === void 0 ? void 0 : transaction.meta) === null || _d === void 0 ? void 0 : _d.preBalances[1]) !== null && _e !== void 0 ? _e : 0) !== 100000000) {
+    if (((_e = (_d = transaction === null || transaction === void 0 ? void 0 : transaction.meta) === null || _d === void 0 ? void 0 : _d.postBalances[1]) !== null && _e !== void 0 ? _e : 0) - ((_g = (_f = transaction === null || transaction === void 0 ? void 0 : transaction.meta) === null || _f === void 0 ? void 0 : _f.preBalances[1]) !== null && _g !== void 0 ? _g : 0) !== 100000000) {
         return res.status(411).json({
             message: "Transaction signature/amount incorrect"
         });
     }
-    if (((_f = transaction === null || transaction === void 0 ? void 0 : transaction.transaction.message.getAccountKeys().get(1)) === null || _f === void 0 ? void 0 : _f.toString()) !== PARENT_WALLET_ADDRESS) {
+    if (((_h = transaction === null || transaction === void 0 ? void 0 : transaction.transaction.message.getAccountKeys().get(1)) === null || _h === void 0 ? void 0 : _h.toString()) !== PARENT_WALLET_ADDRESS) {
         return res.status(411).json({
             message: "Transaction sent to wrong address"
         });
     }
-    if (((_g = transaction === null || transaction === void 0 ? void 0 : transaction.transaction.message.getAccountKeys().get(0)) === null || _g === void 0 ? void 0 : _g.toString()) !== (user === null || user === void 0 ? void 0 : user.address)) {
+    if (((_j = transaction === null || transaction === void 0 ? void 0 : transaction.transaction.message.getAccountKeys().get(0)) === null || _j === void 0 ? void 0 : _j.toString()) !== (user === null || user === void 0 ? void 0 : user.address)) {
         return res.status(411).json({
             message: "Transaction sent to wrong address"
         });
     }
     let response = yield prismaClient.$transaction((txn) => __awaiter(void 0, void 0, void 0, function* () {
-        var _h;
+        var _k;
         const response = yield txn.task.create({
             data: {
-                title: (_h = parseData.data.title) !== null && _h !== void 0 ? _h : DEFAULT_TITLE,
+                title: (_k = parseData.data.title) !== null && _k !== void 0 ? _k : DEFAULT_TITLE,
                 amount: 0.1 * config_1.TOTAL_DECIMALS,
                 signature: parseData.data.signature,
                 user_id: userId
