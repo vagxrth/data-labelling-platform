@@ -14,7 +14,6 @@ interface Task {
     }[]
 }
 
-// CSR
 export const NextTask = () => {
     const [currentTask, setCurrentTask] = useState<Task | null>(null);
     const [loading, setLoading] = useState(true);
